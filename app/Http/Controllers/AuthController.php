@@ -5,17 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
     /*
      * Check if user is logged
      */
-    public static function is_logged()
+    public static function isLogged()
     {
-        session_start();
         if(isset($_SESSION['logged']))
-            if($_SESSION['logged'] !== true)
+            if($_SESSION['logged'] != true)
                 return false;
             else
                 return true;
@@ -25,7 +25,7 @@ class AuthController extends Controller
     /*
      * Generate result for request
      */
-    private function generate_result($success, $message)
+    private function generateResult($success, $message)
     {
         $result = array();
         $result['result']['success'] = $success;
@@ -37,141 +37,155 @@ class AuthController extends Controller
     /*
      * Init sign-in page
      */
-    public function init_signin()
+    public function initSignin()
     {
-        if(!$this->is_logged())
-            return view('auth.sign-in');
+        session_start();
+        if(!self::isLogged())
+            return view('auth.sign-in', ['page' => route('auth.sign-in')]);
         return redirect(route('home.index'));
     }
 
     /*
      * Init sign-up page
      */
-    public function init_signup()
+    public function initSignup()
     {
-        if(!$this->is_logged())
-            return view('auth.sign-up');
+        session_start();
+        if(!self::isLogged())
+            return view('auth.sign-up', ['page' => route('auth.sign-up')]);
         return redirect(route('home.index'));
     }
 
     /*
      * Request logout
      */
-    public function request_logout()
+    public function requestLogout()
     {
-        if($this->is_logged())
+        if(self::isLogged())
             session_destroy();
-
         return redirect(route('auth.sign-in'));
+    }
 
+    /*
+ * Validate sign-up form and add new user to database
+ */
+    public function requestSignup(Request $request)
+    {
+        /*
+         * Check auth status
+         */
+        if(self::isLogged())
+            self::generateResult(false, 'Jesteś już zalogowany.');
+        /*
+         * Check request
+         */
+        if(empty($request))
+            self::generateResult(false, 'Brak danych.');
+
+        /*
+         * Set json
+         */
+        header('Content-Type: application/json');
+
+        /*
+         * Get post data
+         */
+        $email = strtolower($request->email);
+        $name = ucfirst(strtolower($request->name));
+        $password = $request->password;
+        $confirm_password = $request->confirm_password;
+
+        /*
+         * Validate all inputs, if incorrect return error
+         */
+        if(strlen($email) == 0 || filter_var($email, FILTER_VALIDATE_EMAIL) != true)
+            self::generateResult(false, 'Wartość w polu e-mail jest niepoprawna.');
+
+        if((strlen($name) < 3 || strlen($name) > 15) || preg_match('/^[a-zA-ZĘÓĄŚŁŻŹĆŃęóąśłżźćń]{3,}$/', $name) != true)
+            self::generateResult(false, 'Wartość w polu imię jest niepoprawna.');
+
+        if(strlen($password) < 6 || preg_match('/[A-Z]/', $password) != true || preg_match('/[a-z]/', $password) != true || preg_match('/[0-9]/', $password) != true)
+            self::generateResult(false, 'Hasło musi składać się z minimum 6 liter w tym jedna duża i jedna mała litera oraz jedna cyfra.');
+
+        if($confirm_password != $password)
+            self::generateResult(false, 'Podane hasła nie są takie same.');
+
+        if(User::where('email', '=', $email)->count() != 0)
+            self::generateResult(false, 'Użytkownik o podanym adresie e-mail jest już zarejestrowany.');
+
+        /*
+         * Init new user
+         */
+        $user = new User();
+
+        /*
+         * Add user to database
+         */
+        $user->email = $email;
+        $user->name = $name;
+        $user->password = bcrypt($password);
+        $user->save();
+
+        /*
+         * Check and return
+         */
+        if(User::where('email', '=', $email)->count() == 1)
+            self::generateResult(true, 'Zostałeś pomyślnie zarejestrowany. Za chwilę zostaniesz przekierowany na stronę logowania.');
+        self::generateResult(false, 'Wystąpił błąd podczas rejestracji.');
     }
 
     /*
      * Validate sign-in form and add new user to database
      */
-    public function request_signin(Request $request)
+    public function requestSignin(Request $request)
     {
-        if(!empty($request))
-        {
-            header('Content-Type: application/json');
+        /*
+         * Check auth status
+         */
+        if(self::isLogged())
+            self::generateResult(false, 'Jesteś już zalogowany.');
 
-            /*
-             * Get post data
-             */
-            $email = strtolower($request->email);
-            $password = $request->password;
+        /*
+         * Check request
+         */
+        if(empty($request))
+            self::generateResult(false, 'Brak danych.');
 
-            /*
-             * Validate all inputs, if incorrect return errors
-             */
-            if(strlen($email) > 0 && filter_var($email, FILTER_VALIDATE_EMAIL))
-            {
-                if(strlen($password) > 0)
-                {
-                    $user = User::where('email', '=', $email);
-                    if($user->count() == 1)
-                    {
-                        $user = $user->first();
-                        if(Hash::check($password, $user->password))
-                        {
-                            session_start();
+        /*
+         * Set json
+         */
+        header('Content-Type: application/json');
 
-                            $_SESSION['logged'] = true;
-                            $_SESSION['user'] = $user;
+        /*
+         * Get post data
+         */
+        $email = strtolower($request->email);
+        $password = $request->password;
 
-                            $this->generate_result(true, 'Zostałeś pomyślnie zalogowany. Za chwile zostaniesz przekierowany na stronę główną.');
-                        }
-                        else
-                            $this->generate_result(false, 'Podano błędny adres e-mail i/lub hasło. Spróbuj ponownie.');
-                    }
-                    else
-                        $this->generate_result(false, 'Podano błędny adres e-mail i/lub hasło. Spróbuj ponownie.');
-                }
-                else
-                    $this->generate_result(false, 'Wartość w polu hasło jest niepoprawna.');
-            }
-            else
-                $this->generate_result(false, 'Wartość w polu e-mail jest niepoprawna.');
-        }
-    }
+        /*
+         * Validate all inputs, if incorrect return errors
+         */
+        if(strlen($email) == 0 || filter_var($email, FILTER_VALIDATE_EMAIL) != true)
+            self::generateResult(false, 'Wartość w polu e-mail jest niepoprawna.');
 
-    /*
-     * Validate sign-up form and add new user to database
-     */
-    public function request_signup(Request $request)
-    {
-        $user = new User();
+        if(strlen($password) == 0)
+            self::generateResult(false, 'Wartość w polu hasło jest niepoprawna.');
 
-        if(!empty($request))
-        {
-            header('Content-Type: application/json');
+        $user = User::where('email', '=', $email);
+        if($user->count() != 1)
+            self::generateResult(false, 'Podano błędny adres e-mail i/lub hasło. Spróbuj ponownie.');
 
-            /*
-             * Get post data
-             */
-            $email = strtolower($request->email);
-            $name = ucfirst(strtolower($request->name));
-            $password = $request->password;
-            $confirm_password = $request->confirm_password;
+        $user = $user->first();
+        if(Hash::check($password, $user->password) == false)
+            self::generateResult(false, 'Podano błędny adres e-mail i/lub hasło. Spróbuj ponownie.');
 
-            /*
-             * Validate all inputs, if incorrect return error
-             */
-            if(strlen($email) > 0 && filter_var($email, FILTER_VALIDATE_EMAIL))
-            {
-                if(strlen($name) >= 3 && strlen($name) <= 15 && preg_match('/^[a-zA-ZĘÓĄŚŁŻŹĆŃęóąśłżźćń]{3,}$/', $name))
-                {
-                    if(strlen($password) >= 6 && preg_match('/[A-Z]/', $password) && preg_match('/[a-z]/', $password) && preg_match('/[0-9]/', $password))
-                    {
-                        if($confirm_password == $password)
-                        {
-                            if(User::where('email', '=', $email)->count() == 0)
-                            {
-                                $user->email = $email;
-                                $user->name = $name;
-                                $user->password = bcrypt($password);
+        /*
+         * Store session data and return success
+         */
+        session_start();
+        $_SESSION['logged'] = true;
+        $_SESSION['user'] = $user;
 
-                                $user->save();
-
-                                if(User::where('email', '=', $email)->count() == 1)
-                                    $this->generate_result(true, 'Zostałeś pomyślnie zarejestrowany. Za chwilę zostaniesz przekierowany na stronę logowania.');
-                                else
-                                    $this->generate_result(false, 'Wystąpił błąd podczas rejestracji.');
-                            }
-                            else
-                                $this->generate_result(false, 'Użytkownik o podanym adresie e-mail jest już zarejestrowany.');
-                        }
-                        else
-                            $this->generate_result(false, 'Podane hasła nie są takie same.');
-                    }
-                    else
-                        $this->generate_result(false, 'Hasło musi składać się z minimum 6 liter w tym jedna duża i jedna mała litera oraz jedna cyfra.');
-                }
-                else
-                    $this->generate_result(false, 'Wartość w polu imię jest niepoprawna.');
-            }
-            else
-                $this->generate_result(false, 'Wartość w polu e-mail jest niepoprawna.');
-        }
+        self::generateResult(true, 'Zostałeś pomyślnie zalogowany. Za chwile zostaniesz przekierowany na stronę główną.');
     }
 }

@@ -7,15 +7,15 @@
             </button>
             <div class="collapse navbar-collapse" id="navbar">
                 <div class="navbar-nav">
-                    @if(isset($_SESSION['logged']) && $_SESSION['logged'] === true)
+                    @if(\App\Http\Controllers\AuthController::isLogged())
                     <a class="nav-link @if($page == route('home.index')) active @endif" href="{{ route('home.index') }}">Lista</a>
                     <a class="nav-link @if($page == route('home.add')) active @endif" href="{{ route('home.add') }}">Dodaj wpis</a>
                     <a class="nav-link @if($page == route('home.modify')) active @endif" href="{{ route('home.modify') }}">Edytuj wpis</a>
                     <a class="nav-link @if($page == route('home.remove')) active @endif" href="{{ route('home.remove') }}">Usuń wpis</a>
                     <a class="nav-link" href="{{ route('requests.logout') }}">Wyloguj się</a>
                     @else
-                    <a class="nav-link" href="{{ route('auth.sign-up') }}">Zarejestruj się</a>
-                    <a class="nav-link active" href="{{ route('auth.sign-in') }}">Zaloguj się</a>
+                    <a class="nav-link @if($page == route('auth.sign-up')) active @endif" href="{{ route('auth.sign-up') }}">Zarejestruj się</a>
+                    <a class="nav-link @if($page == route('auth.sign-in')) active @endif" href="{{ route('auth.sign-in') }}">Zaloguj się</a>
                     @endif
                 </div>
             </div>
