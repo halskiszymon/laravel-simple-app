@@ -25,7 +25,9 @@ Route::post('/api/sign-up', [AuthController::class, 'request_signup'])->name('re
 Route::get('/', [TodoListController::class, 'init_index'])->name('home.index');
 Route::get('/add', [TodoListController::class, 'init_add'])->name('home.add');
 Route::get('/modify', [TodoListController::class, 'init_modify'])->name('home.modify');
+Route::get('/modify/{id}', [TodoListController::class, 'init_modify'])->name('home.modify-id');
 Route::get('/remove', [TodoListController::class, 'init_remove'])->name('home.remove');
+Route::get('/remove/{id}', [TodoListController::class, 'init_remove'])->name('home.remove-id');
 
 Route::post('/api/add-book', [TodoListController::class, 'request_add'])->name('requests.add');
 Route::post('/api/modify-book', [TodoListController::class, 'request_modify'])->name('requests.modify');

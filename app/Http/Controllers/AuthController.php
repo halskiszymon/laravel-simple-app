@@ -41,7 +41,7 @@ class AuthController extends Controller
     {
         if(!$this->is_logged())
             return view('auth.sign-in');
-        return redirect('/');
+        return redirect(route('home.index'));
     }
 
     /*
@@ -51,7 +51,7 @@ class AuthController extends Controller
     {
         if(!$this->is_logged())
             return view('auth.sign-up');
-        return redirect('/');
+        return redirect(route('home.index'));
     }
 
     /*
@@ -62,7 +62,7 @@ class AuthController extends Controller
         if($this->is_logged())
             session_destroy();
 
-        return redirect('/');
+        return redirect(route('auth.sign-in'));
 
     }
 

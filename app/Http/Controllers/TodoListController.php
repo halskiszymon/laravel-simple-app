@@ -27,9 +27,9 @@ class TodoListController extends Controller
     public function init_index()
     {
         if(AuthController::is_logged())
-            return view('home.index', ['list' => TodoList::all()]);
+            return view('home.index', ['list' => TodoList::all(), 'page' => route('home.index')]);
 
-        return redirect('/sign-in');
+        return redirect(route('auth.sign-in'));
     }
 
     /*
@@ -38,28 +38,28 @@ class TodoListController extends Controller
     public function init_add()
     {
         if(AuthController::is_logged())
-            return view('home.add', ['user' => $_SESSION['user']]);
-        return redirect('/sign-in');
+            return view('home.add', ['user' => $_SESSION['user'], 'page' => route('home.add')]);
+        return redirect(route('auth.sign-in'));
     }
 
     /*
  * Init modify book page
  */
-    public function init_modify()
+    public function init_modify($id = false)
     {
         if(AuthController::is_logged())
-            return view('home.modify');
-        return redirect('/sign-in');
+            return view('home.modify', ['entry' => TodoList::find($id), 'page' => route('home.modify')]);
+        return redirect(route('auth.sign-in'));
     }
 
     /*
      * Init remove book page
      */
-    public function init_remove()
+    public function init_remove($id = false)
     {
         if(AuthController::is_logged())
-            return view('home.remove');
-        return redirect('/sign-in');
+            return view('home.remove', ['entry' => TodoList::find($id), 'page' => route('home.remove')]);
+        return redirect(route('auth.sign-in'));
     }
 
     /*
