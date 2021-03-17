@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
-    /*
-     * Check if user is logged
-     */
+    //Check if user is logged
     public static function isLogged()
     {
         if(isset($_SESSION['logged']))
@@ -22,9 +20,7 @@ class AuthController extends Controller
         return false;
     }
 
-    /*
-     * Generate result for request
-     */
+    //Generate result for request
     private function generateResult($success, $message)
     {
         $result = array();
@@ -34,9 +30,7 @@ class AuthController extends Controller
         exit(json_encode($result, JSON_UNESCAPED_UNICODE));
     }
 
-    /*
-     * Init sign-in page
-     */
+    //Init sign-in page
     public function initSignin()
     {
         session_start();
@@ -45,9 +39,7 @@ class AuthController extends Controller
         return redirect(route('home.index'));
     }
 
-    /*
-     * Init sign-up page
-     */
+    //Init sign-up page
     public function initSignup()
     {
         session_start();
@@ -56,9 +48,7 @@ class AuthController extends Controller
         return redirect(route('home.index'));
     }
 
-    /*
-     * Request logout
-     */
+    //Request logout
     public function requestLogout()
     {
         if(self::isLogged())
@@ -66,38 +56,27 @@ class AuthController extends Controller
         return redirect(route('auth.sign-in'));
     }
 
-    /*
- * Validate sign-up form and add new user to database
- */
+    //Validate sign-up form and add new user to database
     public function requestSignup(Request $request)
     {
-        /*
-         * Check auth status
-         */
+        //Check auth status
         if(self::isLogged())
             self::generateResult(false, 'Jesteś już zalogowany.');
-        /*
-         * Check request
-         */
+
+        //Check request
         if(empty($request))
             self::generateResult(false, 'Brak danych.');
 
-        /*
-         * Set json
-         */
+        //Set json
         header('Content-Type: application/json');
 
-        /*
-         * Get post data
-         */
+        //Get post data
         $email = strtolower($request->email);
         $name = ucfirst(strtolower($request->name));
         $password = $request->password;
         $confirm_password = $request->confirm_password;
 
-        /*
-         * Validate all inputs, if incorrect return error
-         */
+        //Validate all inputs, if incorrect return error
         if(strlen($email) == 0 || filter_var($email, FILTER_VALIDATE_EMAIL) != true)
             self::generateResult(false, 'Wartość w polu e-mail jest niepoprawna.');
 
@@ -113,58 +92,40 @@ class AuthController extends Controller
         if(User::where('email', '=', $email)->count() != 0)
             self::generateResult(false, 'Użytkownik o podanym adresie e-mail jest już zarejestrowany.');
 
-        /*
-         * Init new user
-         */
+        //Init new user
         $user = new User();
 
-        /*
-         * Add user to database
-         */
+        //Add user to database
         $user->email = $email;
         $user->name = $name;
         $user->password = bcrypt($password);
         $user->save();
 
-        /*
-         * Check and return
-         */
+        //Check and return
         if(User::where('email', '=', $email)->count() == 1)
             self::generateResult(true, 'Zostałeś pomyślnie zarejestrowany. Za chwilę zostaniesz przekierowany na stronę logowania.');
         self::generateResult(false, 'Wystąpił błąd podczas rejestracji.');
     }
 
-    /*
-     * Validate sign-in form and add new user to database
-     */
+    //Validate sign-in form and add new user to database
     public function requestSignin(Request $request)
     {
-        /*
-         * Check auth status
-         */
+        //Check auth status
         if(self::isLogged())
             self::generateResult(false, 'Jesteś już zalogowany.');
 
-        /*
-         * Check request
-         */
+        //Check request
         if(empty($request))
             self::generateResult(false, 'Brak danych.');
 
-        /*
-         * Set json
-         */
+        //Set json
         header('Content-Type: application/json');
 
-        /*
-         * Get post data
-         */
+        //Get post data
         $email = strtolower($request->email);
         $password = $request->password;
 
-        /*
-         * Validate all inputs, if incorrect return errors
-         */
+        //Validate all inputs, if incorrect return errors
         if(strlen($email) == 0 || filter_var($email, FILTER_VALIDATE_EMAIL) != true)
             self::generateResult(false, 'Wartość w polu e-mail jest niepoprawna.');
 
@@ -179,9 +140,7 @@ class AuthController extends Controller
         if(Hash::check($password, $user->password) == false)
             self::generateResult(false, 'Podano błędny adres e-mail i/lub hasło. Spróbuj ponownie.');
 
-        /*
-         * Store session data and return success
-         */
+        //Store session data and return success
         session_start();
         $_SESSION['logged'] = true;
         $_SESSION['user'] = $user;

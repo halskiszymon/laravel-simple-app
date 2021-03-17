@@ -7,9 +7,7 @@ use Illuminate\Http\Request;
 
 class TodoListController extends Controller
 {
-    /*
-     * Generate result for request
-     */
+    //Generate result for request
     private function generateResult($success, $message, $data = false)
     {
         $result = array();
@@ -21,9 +19,7 @@ class TodoListController extends Controller
         exit(json_encode($result, JSON_UNESCAPED_UNICODE));
     }
 
-    /*
-     * Init index page
-     */
+    //Init index page
     public function initIndex()
     {
         session_start();
@@ -32,9 +28,7 @@ class TodoListController extends Controller
         return redirect(route('auth.sign-in'));
     }
 
-    /*
-     * Init add book page
-     */
+    //Init add book page
     public function initAdd()
     {
         session_start();
@@ -43,9 +37,7 @@ class TodoListController extends Controller
         return redirect(route('auth.sign-in'));
     }
 
-    /*
- * Init modify book page
- */
+    //Init modify book page
     public function initModify($id = false)
     {
         session_start();
@@ -54,9 +46,7 @@ class TodoListController extends Controller
         return redirect(route('auth.sign-in'));
     }
 
-    /*
-     * Init remove book page
-     */
+    //Init remove book page
     public function initRemove($id = false)
     {
         session_start();
@@ -65,196 +55,128 @@ class TodoListController extends Controller
         return redirect(route('auth.sign-in'));
     }
 
-    /*
-     * Validate add book form and add new book to database
-     */
+    //Validate add book form and add new book to database
     public function requestAdd(Request $request)
     {
-        /*
-         * Check auth status
-         */
+        //Check auth status
         if(AuthController::isLogged() == false)
             self::generateResult(false, 'Brak autoryzacji.');
 
-        /*
-         * Check request
-         */
+        //Check request
         if(empty($request))
             self::generateResult(false, 'Brak danych.');
 
-        /*
-         * Set json
-         */
+        //Set json
         header('Content-Type: application/json');
 
-        /*
-         * Get post data
-         */
+        //Get post data
         $name = $request->name;
 
-        /*
-         * Validate all inputs, if incorrect return error
-         */
+        //Validate all inputs, if incorrect return error
         if(strlen($name) < 1 || strlen($name) > 200)
             self::generateResult(false, 'Wartość w polu nazwa jest niepoprawna.');
 
-        /*
-         * Init new list entry
-         */
+        //Init new list entry
         $list = new TodoList();
 
-        /*
-         * Add entry to database
-         */
+        //Add entry to database
         $list->name = $name;
         $list->save();
 
-        /*
-         * Check and return
-         */
+        //Check and return
         if(TodoList::where('name', '=', $name)->count() == 1)
             self::generateResult(true, 'Wpis został pomyślnie dodany. <a href="' . route('home.index') . '">Przejdź do listy.</a>');
         self::generateResult(false, 'Wystąpił błąd podczas dodawania wpisu.');
     }
 
-    /*
-     * Validate modify book form and add new book to database
-     */
+    //Validate modify book form and add new book to database
     public function requestModify(Request $request)
     {
-        /*
-         * Check auth status
-         */
+        //Check auth status
         if(AuthController::isLogged() == false)
             self::generateResult(false, 'Brak autoryzacji.');
 
-        /*
-         * Check request
-         */
+        //Check request
         if(empty($request))
             self::generateResult(false, 'Brak danych.');
 
-        /*
-         * Set json
-         */
+        //Set json
         header('Content-Type: application/json');
 
-        /*
-         * Get post data
-         */
+        //Get post data
         $id = $request->id;
 
-        /*
-         * Validate all inputs, if incorrect return error
-         */
+        //Validate all inputs, if incorrect return error
         if(is_nan($id) || $id == 0)
             self::generateResult(false, 'Wartość w polu id jest niepoprawna.');
 
-        /*
-         * Get entry from database
-         */
+        //Get entry from database
         $list = TodoList::where('id', '=', $id);
 
-        /*
-         * Check if entry exists
-         */
+        //Check if entry exists
         if($list->count() == 0)
             self::generateResult(false, 'Nie znaleziono takiego wpisu w bazie danych.');
 
-        /*
-         * Fetch data from entry
-         */
+        //Fetch data from entry
         $list = $list->first();
 
-        /*
-         * Return entry data if no new data has been sent
-         */
+        //Return entry data if no new data has been sent
         if(!isset($request->name))
             self::generateResult(true, '', array('name' => $list->name));
 
-        /*
-         * Get post data
-         */
+        //Get post data
         $name = $request->name;
 
-        /*
-         * Validate all inputs, if incorrect return error
-         */
+        //Validate all inputs, if incorrect return error
         if(strlen($name) < 1 || strlen($name) > 200)
             self::generateResult(false, 'Wartość w polu nazwa jest niepoprawna.');
 
-        /*
-         * Check difference
-         */
+        //Check difference
         if($list->name == $name)
             self::generateResult(false, 'Treść wpisu do aktualizacji jest taka sama jak poprzednia.');
 
-        /*
-         * Update data for entry in database
-         */
+        //Update data for entry in database
         $list->name = $name;
         $list->save();
 
-        /*
-         * Check and return
-         */
+        //Check and return
         if(TodoList::where([['id', '=', $id], ['name', '=', $name]])->count() == 1)
             self::generateResult(true, 'Wpis został pomyślnie zmodyfikowany. <a href="' . route('home.index') . '">Przejdź do listy.</a>');
         self::generateResult(false, 'Wystąpił błąd podczas modyfikacji książki.');
     }
 
-    /*
-     * Validate remove book form and add new book to database
-     */
+    //Validate remove book form and add new book to database
     public function requestRemove(Request $request)
     {
-        /*
-         * Check auth status
-         */
+        //Check auth status
         if(AuthController::isLogged() == false)
             self::generateResult(false, 'Brak autoryzacji.');
 
-        /*
-         * Check request
-         */
+        //Check request
         if(empty($request))
             self::generateResult(false, 'Brak danych.');
 
-        /*
-         * Set json
-         */
+        //Set json
         header('Content-Type: application/json');
 
-        /*
-         * Get post data
-         */
+        //Get post data
         $id = $request->id;
 
-        /*
-         * Validate all inputs, if incorrect return error
-         */
+        //Validate all inputs, if incorrect return error
         if(is_nan($id) || $id == 0)
             self::generateResult(false, 'Wartość w polu id jest niepoprawna.');
 
-        /*
-         * Get entry from database
-         */
+        //Get entry from database
         $list = TodoList::where('id', '=', $id);
 
-        /*
-         * Check if entry exists
-         */
+        //Check if entry exists
         if($list->count() == 0)
             self::generateResult(false, 'Nie znaleziono takiego wpisu w bazie danych.');
 
-        /*
-         * Delete from database
-         */
+        //Delete from database
         $list->delete();
 
-        /*
-         * Check and return
-         */
+        //Check and return
         if(TodoList::where('id', '=', $id)->count() == 0)
             self::generateResult(true, 'Wpis został pomyślnie usunięty. <a href="' . route('home.index') . '">Przejdź do listy.</a>');
         self::generateResult(false, 'Wystąpił błąd podczas usuwania wpisu.');
